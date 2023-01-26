@@ -18,6 +18,6 @@ limit 10;
 -- Q6
 select tzd."Zone", max(gtd.tip_amount) as largest_tip
 from green_taxi_data gtd 
-left join taxi_zone_data tzd on gtd."DOLocationID" = tzd."LocationID" 
-where gtd."PULocationID" = (select "LocationID" from taxi_zone_data where "Zone" = 'Astoria')
+inner join taxi_zone_data tzd on gtd."DOLocationID" = tzd."LocationID" 
+where gtd."PULocationID" in (select "LocationID" from taxi_zone_data where "Zone" = 'Astoria')
 group by 1 order by 2 desc;

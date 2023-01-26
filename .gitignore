@@ -1,1 +1,5 @@
+# raw data, too big to upload to github
 week1/raw-data/*.csv
+
+# postgres db
+week1/ny_taxi_postgres_data 

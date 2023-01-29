@@ -1,5 +1,9 @@
+# general
+.vscode/
+*/.ipynb_checkpoints
+
 # raw data, too big to upload to github
-week1/raw-data/*.csv
+*/raw-data
 
 # postgres db
-week1/ny_taxi_postgres_data 
+*/ny_taxi_postgres_data 

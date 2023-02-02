@@ -4,7 +4,7 @@
 */__pycache__
 
 # raw data, too big to upload to github
-*/raw_data
+**/*/raw_data
 
 # postgres db
 */pg_database 

@@ -1,0 +1,61 @@
+###
+### A complete description of a Prefect Deployment for flow 'etl-parent-flow'
+###
+name: Parameterized Flow
+description: null
+version: 71a6e99740dc7bb8b97fd11df5ce2598
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+tags: []
+parameters:
+  color: green
+  months:
+  - 2
+  - 3
+  year: 2019
+schedule: 
+  cron: 0 5 1 * *
+  timezone: UTC
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: etl-parent-flow
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: 6c3331e9-b64b-4aaf-8394-d5c9bbdcbdc9
+  _block_document_name: anonymous-ef57e1ea-5f6e-4a5e-89f7-f184888ab769
+  _is_anonymous: true
+  block_type_slug: process
+  _block_type_slug: process
+storage: null
+path: /home/private/data-eng-course/src/week2
+entrypoint: parameterized_flow.py:etl_parent_flow
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties:
+    months:
+      title: months
+      position: 0
+      type: array
+      items:
+        type: integer
+    year:
+      title: year
+      position: 1
+      type: integer
+    color:
+      title: color
+      position: 2
+      type: string
+  required: null
+  definitions: null

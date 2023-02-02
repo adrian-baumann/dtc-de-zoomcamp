@@ -33,7 +33,7 @@ infrastructure:
   block_type_slug: process
   _block_type_slug: process
 storage:
-  repository: https://github.com/adrian-baumann/dtc-de-zoomcamp/tree/main/week2
+  repository: https://github.com/adrian-baumann/dtc-de-zoomcamp.git
   reference: null
   access_token: null
   _block_document_id: cfc0c594-722a-45f2-8e27-219b3c46f6be

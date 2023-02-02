@@ -2,7 +2,6 @@ from pathlib import Path
 import pandas as pd
 from prefect import flow, task
 from prefect_gcp.cloud_storage import GcsBucket
-from prefect.filesystems import GitHub
 from random import randint
 from prefect.tasks import task_input_hash
 from datetime import timedelta
@@ -70,6 +69,6 @@ def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = 
 
 if __name__ == "__main__":
     color = "green"
-    months = [11]
+    months = [10]
     year = 2020
     etl_parent_flow_gh(months, year, color)

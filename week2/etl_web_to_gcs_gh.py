@@ -2,12 +2,9 @@ from pathlib import Path
 import pandas as pd
 from prefect import flow, task
 from prefect_gcp.cloud_storage import GcsBucket
-from prefect.filesystems import GitHub
 from random import randint
 from prefect.tasks import task_input_hash
 from datetime import timedelta
-
-
 
 
 @task(retries=3, cache_key_fn=task_input_hash, cache_expiration=timedelta(days=1))
@@ -72,4 +69,4 @@ if __name__ == "__main__":
     color = "green"
     months = [11]
     year = 2020
-    etl_parent_flow(months, year, color)
+    etl_parent_flow_gh(months, year, color)

@@ -1,9 +1,14 @@
-# general
+# IDE and environment
 .vscode/
-*/.ipynb_checkpoints
+*/.python-version
+*/__pycache__
 
 # raw data, too big to upload to github
-*/raw-data
+*/raw_data
 
 # postgres db
 */pg_database 
+
+# jupyter related
+*/.ipynb_checkpoints
+

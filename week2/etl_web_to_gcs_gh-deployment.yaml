@@ -3,7 +3,7 @@
 ###
 name: Github Storage Flow
 description: null
-version: 6653487303ed411d023effe53278b401
+version: 45136b812ea18d2167a39273fae978e0
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 tags: []
@@ -42,7 +42,7 @@ storage:
   block_type_slug: github
   _block_type_slug: github
 path: ''
-entrypoint: etl_web_to_gcs_gh.py:etl_parent_flow_gh
+entrypoint: week2/etl_web_to_gcs_gh.py:etl_parent_flow_gh
 parameter_openapi_schema:
   title: Parameters
   type: object

@@ -7,9 +7,7 @@ from random import randint
 from prefect.tasks import task_input_hash
 from datetime import timedelta
 
-github_block = GitHub.load("gh-dtc-storage")
-github_block.get_directory("week2")
-github_block.save("main")
+
 
 
 @task(retries=3, cache_key_fn=task_input_hash, cache_expiration=timedelta(days=1))
@@ -52,9 +50,6 @@ def write_gcs(path: Path) -> None:
 @flow(log_prints=True)
 def etl_web_to_gcs(year: int, month: int, color: str) -> None:
     """The main ETL function"""
-    color = "green"
-    year = 2020
-    month = 1
     dataset_file = f"{color}_tripdata_{year}-{month:02}"
     dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{color}/{dataset_file}.csv.gz"
 
@@ -65,7 +60,7 @@ def etl_web_to_gcs(year: int, month: int, color: str) -> None:
 
 
 @flow()
-def etl_parent_flow(months: list[int] = None, year: int = None, color: str = None):
+def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = None):
     if all([months, year, color]):
         for month in months:
             etl_web_to_gcs(year, month, color)
@@ -75,6 +70,6 @@ def etl_parent_flow(months: list[int] = None, year: int = None, color: str = Non
 
 if __name__ == "__main__":
     color = "green"
-    months = [2, 3]
-    year = 2019
+    months = [11]
+    year = 2020
     etl_parent_flow(months, year, color)

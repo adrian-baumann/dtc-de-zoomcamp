@@ -36,7 +36,7 @@ def write_local(df: pd.DataFrame, color: str, dataset_file: str) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     filepath = path / f"{dataset_file}.parquet"
     df.to_parquet(filepath, compression="gzip")
-    return path
+    return filepath
 
 
 @task(timeout_seconds=120)

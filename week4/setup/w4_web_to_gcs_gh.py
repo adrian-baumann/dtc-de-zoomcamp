@@ -32,7 +32,6 @@ def fetch(dataset_url: str) -> pd.DataFrame:
     }
 
     df = pd.read_csv(dataset_url, dtype=dtype_dict)
-    print(df.dtypes)
     return df
 
 

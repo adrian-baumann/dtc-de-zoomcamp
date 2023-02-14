@@ -41,7 +41,7 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
     for col in df.columns:
         if "pickup_datetime" in col or "dropoff_datetime" in col:
             df[col] = pd.to_datetime(df[col])
-    # df["passenger_count"].fillna(0, inplace=True
+    df["passenger_count"].fillna(0, inplace=True)
     print(f"rows: {len(df)}")
     return df
 

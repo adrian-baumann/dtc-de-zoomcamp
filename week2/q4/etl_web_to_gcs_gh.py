@@ -14,26 +14,26 @@ def fetch(dataset_url: str) -> pd.DataFrame:
     #     raise Exception
     print(dataset_url)
 
-    dtype_dict = {
-        "VendorID": "int8",
-        "passenger_count": "int8",
-        "trip_distance": "float32",
-        "RatecodeID": "int8",
-        "store_and_fwd_flag": "object",
-        "PULocationID": "int16",
-        "DOLocationID": "int16",
-        "payment_type": "int8",
-        "fare_amount": "float32",
-        "extra": "float32",
-        "mta_tax": "float32",
-        "tip_amount": "float32",
-        "tolls_amount": "float32",
-        "improvement_surcharge": "float32",
-        "total_amount": "float32",
-        "congestion_surcharge": "float32",
-    }
+    # dtype_dict = {
+    #     "VendorID": "int8",
+    #     "passenger_count": "int8",
+    #     "trip_distance": "float32",
+    #     "RatecodeID": "int8",
+    #     "store_and_fwd_flag": "object",
+    #     "PULocationID": "int16",
+    #     "DOLocationID": "int16",
+    #     "payment_type": "int8",
+    #     "fare_amount": "float32",
+    #     "extra": "float32",
+    #     "mta_tax": "float32",
+    #     "tip_amount": "float32",
+    #     "tolls_amount": "float32",
+    #     "improvement_surcharge": "float32",
+    #     "total_amount": "float32",
+    #     "congestion_surcharge": "float32",
+    # }
 
-    df = pd.read_csv(dataset_url, dtype=dtype_dict)
+    df = pd.read_csv(dataset_url)
     return df
 
 

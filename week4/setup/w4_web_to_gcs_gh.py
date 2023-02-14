@@ -32,6 +32,7 @@ def fetch(dataset_url: str) -> pd.DataFrame:
     }
 
     df = pd.read_csv(dataset_url, dtype=dtype_dict)
+    print(df.dtypes)
     return df
 
 
@@ -63,7 +64,7 @@ def write_gcs(path: Path) -> None:
     return
 
 
-@flow(log_prints=True, retries=3)
+@flow(log_prints=True)
 def etl_web_to_local(year: int, month: int, color: str) -> Path:
     """The main ET function"""
     dataset_file = f"{color}_tripdata_{year}-{month:02}"
@@ -82,6 +83,7 @@ def etl_local_to_gcs(path: Path) -> None:
 
 @flow()
 def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = None):
+    file_not_uploaded = []
     if all([months, year, color]):
         for month in months:
             path = etl_web_to_local(year, month, color)
@@ -89,9 +91,11 @@ def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = 
                 etl_local_to_gcs(path)
             except OSError:
                 print(f"Connection Timeout. Try uploading manually.\nFile: {path.name}")
-
+                file_not_uploaded.append(path.name)
     else:
         print("parameter is missing")
+    if file_not_uploaded:
+        print(f"the following files were not uploaded: {file_not_uploaded}")
 
 
 if __name__ == "__main__":

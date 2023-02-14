@@ -14,7 +14,7 @@ def fetch(dataset_url: str) -> pd.DataFrame:
 
     dtype_dict = {
         "VendorID": "object",
-        "passenger_count": "int8",
+        "passenger_count": "Int8",
         "trip_distance": "float32",
         "RatecodeID": "object",
         "store_and_fwd_flag": "object",

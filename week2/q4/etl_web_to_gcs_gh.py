@@ -83,7 +83,7 @@ def etl_local_to_gcs(path: Path) -> None:
 
 
 @flow()
-def etl_parent_flow(months: list[int] = None, year: int = None, color: str = None):
+def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = None):
     if all([months, year, color]):
         paths = []
         for month in months:
@@ -102,4 +102,4 @@ if __name__ == "__main__":
     color = "green"
     months = [1, 6, 7, 10, 11, 12]
     year = 2019
-    etl_parent_flow(months, year, color)
+    etl_parent_flow_gh(months, year, color)

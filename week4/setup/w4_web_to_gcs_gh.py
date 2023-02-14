@@ -67,7 +67,7 @@ def write_gcs(path: Path) -> None:
 def etl_web_to_local(year: int, month: int, color: str) -> Path:
     """The main ET function"""
     dataset_file = f"{color}_tripdata_{year}-{month:02}"
-    dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/tag/{color}/{dataset_file}.csv.gz"
+    dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{color}/{dataset_file}.csv.gz"
     df = fetch(dataset_url)
     df_transformed = transform(df)
     path = write_local(df_transformed, color, dataset_file)

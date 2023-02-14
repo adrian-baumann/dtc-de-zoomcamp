@@ -7,13 +7,33 @@ from prefect.tasks import task_input_hash
 from datetime import timedelta
 
 
-@task(retries=3, cache_key_fn=task_input_hash, cache_expiration=timedelta(days=1))
+@task(log_prints=True, retries=3, cache_key_fn=task_input_hash, cache_expiration=timedelta(days=1))
 def fetch(dataset_url: str) -> pd.DataFrame:
     """Read taxi data from web into pandas DataFrame"""
     # if randint(0, 1) > 0:
     #     raise Exception
+    print(dataset_url)
 
-    df = pd.read_csv(dataset_url)
+    dtype_dict = {
+        "VendorID": "int8",
+        "passenger_count": "int8",
+        "trip_distance": "float32",
+        "RatecodeID": "int8",
+        "store_and_fwd_flag": "object",
+        "PULocationID": "int16",
+        "DOLocationID": "int16",
+        "payment_type": "int8",
+        "fare_amount": "float32",
+        "extra": "float32",
+        "mta_tax": "float32",
+        "tip_amount": "float32",
+        "tolls_amount": "float32",
+        "improvement_surcharge": "float32",
+        "total_amount": "float32",
+        "congestion_surcharge": "float32",
+    }
+
+    df = pd.read_csv(dataset_url, dtype=dtype_dict)
     return df
 
 
@@ -70,6 +90,6 @@ def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = 
 
 if __name__ == "__main__":
     color = "green"
-    months = [11]
-    year = 2020
+    months = [1, 6, 7]
+    year = 2019
     etl_parent_flow_gh(months, year, color)

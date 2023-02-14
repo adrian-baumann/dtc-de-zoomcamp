@@ -83,10 +83,8 @@ def etl_local_to_gcs(path: Path) -> None:
 @flow()
 def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = None):
     if all([months, year, color]):
-        paths = []
         for month in months:
-            paths.append(etl_web_to_local(year, month, color))
-        for path in paths:
+            path = etl_web_to_local(year, month, color)
             try:
                 etl_local_to_gcs(path)
             except OSError:

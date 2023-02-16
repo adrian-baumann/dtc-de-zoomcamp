@@ -49,7 +49,7 @@ def fetch(dataset_url: str) -> pd.DataFrame:
 def transform(df: pd.DataFrame) -> pd.DataFrame:
     """Fix dtype issues"""
     for col in df.columns:
-        if "pickup_datetime" in col or "dropoff_datetime" in col:
+        if "pickup_datetime" in col.lower() or "dropoff_datetime" in col.lower():
             df[col] = pd.to_datetime(df[col])
         if col == "passenger_count":
             df["passenger_count"].fillna(0, inplace=True)

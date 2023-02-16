@@ -5,9 +5,10 @@ from prefect_gcp.cloud_storage import GcsBucket
 from random import randint
 from prefect.tasks import task_input_hash
 from datetime import timedelta
+from itertools import product
 
 
-@task(log_prints=True, retries=3, cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
+@task(log_prints=True, retries=3)  # cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
 def fetch(dataset_url: str) -> pd.DataFrame:
     """Read taxi data from web into pandas DataFrame"""
     print(f"loading from: {dataset_url}")
@@ -16,13 +17,15 @@ def fetch(dataset_url: str) -> pd.DataFrame:
         "VendorID": "object",
         "passenger_count": "Int8",
         "trip_distance": "float32",
+        "trip_type": "Int8",
+        "payment_type": "Int8",
         "RatecodeID": "object",
         "store_and_fwd_flag": "object",
         "PULocationID": "object",
         "DOLocationID": "object",
-        "payment_type": "object",
         "fare_amount": "float32",
         "extra": "float32",
+        "ehail_fee": "float32",
         "mta_tax": "float32",
         "tip_amount": "float32",
         "tolls_amount": "float32",
@@ -31,15 +34,25 @@ def fetch(dataset_url: str) -> pd.DataFrame:
         "congestion_surcharge": "float32",
     }
 
+    # fhv files
+    if "fhv" in dataset_url:
+        dtype_dict = {
+            "dispatching_base_num": "object",
+            "PUlocationID": "object",
+            "DOlocationID": "object",
+            "SR_Flag": "Int8",
+            "Affiliated_base_number": "object",
+        }
+
     df = pd.read_csv(dataset_url, dtype=dtype_dict)
     return df
 
 
-@task(log_prints=True, cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
+@task(log_prints=True)  # cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
 def transform(df: pd.DataFrame) -> pd.DataFrame:
     """Fix dtype issues"""
     for col in df.columns:
-        if "pickup_datetime" in col or "dropoff_datetime" in col:
+        if "pickup_datetime" in col.lower() or "dropoff_datetime" in col.lower():
             df[col] = pd.to_datetime(df[col])
         if col == "passenger_count":
             df["passenger_count"].fillna(0, inplace=True)
@@ -47,7 +60,7 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-@task(log_prints=True, cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
+@task(log_prints=True)  # cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
 def write_local(df: pd.DataFrame, color: str, dataset_file: str) -> Path:
     """Write DataFrame out locally as parquet file"""
     path = Path(f"raw_data/{color}/{dataset_file}.parquet")
@@ -56,7 +69,7 @@ def write_local(df: pd.DataFrame, color: str, dataset_file: str) -> Path:
     return path
 
 
-@task(log_prints=True, cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
+@task(log_prints=True)  # cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
 def write_gcs(path: Path) -> None:
     """Upload local parquet file to GCS"""
     gcs_block = GcsBucket.load("gcs-dtc-bucket")
@@ -82,10 +95,10 @@ def etl_local_to_gcs(path: Path) -> None:
 
 
 @flow()
-def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = None):
+def etl_parent_flow_gh(months: list[int] = None, years: list[int] = None, colors: list[str] = None):
     file_not_uploaded = []
-    if all([months, year, color]):
-        for month in months:
+    if all([months, years, colors]):
+        for year, month, color in product(years, months, colors):
             path = etl_web_to_local(year, month, color)
             try:
                 etl_local_to_gcs(path)
@@ -99,7 +112,7 @@ def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = 
 
 
 if __name__ == "__main__":
-    color = "yellow"
+    colors = ["yellow"]
     months = [1]
-    year = 2019
-    etl_parent_flow_gh(months, year, color)
+    years = [2019]
+    etl_parent_flow_gh(months, years, colors)

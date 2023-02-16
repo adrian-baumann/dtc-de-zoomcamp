@@ -3,13 +3,19 @@
 ###
 name: W4 Github Storage Flow
 description: null
-version: 538b769551eb43c6ed9e8998e649d7b6
+version: ff000a17fdf1c19ca4dbb33f86e351d9
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 tags: []
 parameters: {}
 schedule: null
 infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: etl-parent-flow-gh
+manifest_path: null
 infrastructure:
   type: process
   env: {}
@@ -18,14 +24,11 @@ infrastructure:
   command: null
   stream_output: true
   working_dir: null
+  _block_document_id: 3b47268a-9e88-4bdf-9e6d-762b1f29d0c0
+  _block_document_name: anonymous-757f5678-ac43-496a-81e7-fd824af8162c
+  _is_anonymous: true
   block_type_slug: process
   _block_type_slug: process
-
-###
-### DO NOT EDIT BELOW THIS LINE
-###
-flow_name: etl-parent-flow-gh
-manifest_path: null
 storage:
   repository: https://github.com/adrian-baumann/dtc-de-zoomcamp.git
   reference: null
@@ -47,13 +50,17 @@ parameter_openapi_schema:
       type: array
       items:
         type: integer
-    year:
-      title: year
+    years:
+      title: years
       position: 1
-      type: integer
-    color:
-      title: color
+      type: array
+      items:
+        type: integer
+    colors:
+      title: colors
       position: 2
-      type: string
+      type: array
+      items:
+        type: string
   required: null
   definitions: null

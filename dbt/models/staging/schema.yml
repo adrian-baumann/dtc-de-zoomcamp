@@ -4,22 +4,19 @@ version: 2
 sources:
     - name: staging
       #For bigquery:
-      #database: taxi-rides-ny-339813
-
-      # For postgres:
-      database: production
-
-      schema: trips_data_all
+      database: dtc-de-zoomcamp-376519
+      schema: rides
 
       # loaded_at_field: record_loaded_at
       tables:
-        - name: green_tripdata
-        - name: yellow_tripdata
+        - name: green_rides
+        - name: yellow_rides
+        - name: fhv_rides
          # freshness:
            # error_after: {count: 6, period: hour}
 
 models:
-    - name: stg_green_tripdata
+    - name: stg_green_rides
       description: >
         Trip made by green taxis, also known as boro taxis and street-hail liveries.
         Green taxis may respond to street hails,but only in the areas indicated in green on the
@@ -110,7 +107,8 @@ models:
           - name: Total_amount 
             description: The total amount charged to passengers. Does not include cash tips.
 
-    - name: stg_yellow_tripdata
+
+    - name: stg_yellow_rides
       description: > 
         Trips made by New York City's iconic yellow taxis. 
         Yellow taxis are the only vehicles permitted to respond to a street hail from a passenger in all five
@@ -201,3 +199,55 @@ models:
             description: Total amount of all tolls paid in trip.
           - name: Total_amount 
             description: The total amount charged to passengers. Does not include cash tips.
+
+
+    - name: stg_fhv_rides
+      description: > 
+        FHV data includes trip data from high-volume for-hire vehicle bases (bases for companies 
+        dispatching 10,000+ trip per day, meaning Uber, Lyft, Via, and Juno), community livery bases, 
+        luxury limousine bases, and black car bases. 
+      columns:
+          - name: tripid
+            description: Primary key for this table, generated with a concatenation of dispatching_base_num+pickup_datetime
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+          - name: dispatching_base_num 
+            description: > 
+                The TLC Base License Number of the base that dispatched the trip.
+          - name: pickup_datetime 
+            description: The date and time of the trip pick-up.
+          - name: dropoff_datetime 
+            description: The date and time of the trip dropoff.
+          - name: pickup_locationid
+            description: TLC Taxi Zone in which the trip began.
+            tests:
+              - relationships:
+                  to: ref('taxi_zone_lookup')
+                  field: locationid
+                  severity: warn
+          - name: dropoff_locationid 
+            description: TLC Taxi Zone in which the trip ended.
+            tests:
+              - relationships:
+                  to: ref('taxi_zone_lookup')
+                  field: locationid
+                  severity: warn
+          - name: SR_Flag 
+            description: > 
+              Indicates if the trip was a part of a shared ride chain offered by a
+              High Volume FHV company (e.g. Uber Pool, Lyft Line). For shared
+              trips, the value is 1. For non-shared rides, this field is null.
+              
+              NOTE, For most High Volume FHV companies, only shared rides that
+              were requested AND matched to another shared-ride request over
+              the course of the journey are flagged. However, Lyft (base license
+              numbers B02510 + B02844) also flags rides for which a shared ride
+              was requested but another passenger was not successfully matched
+              to share the trip—therefore, trips records with SR_Flag=1 from those
+              two bases could indicate EITHER a first trip in a shared trip chain OR
+              a trip for which a shared ride was requested but never matched.
+              Users should anticipate an overcount of successfully shared trips
+              completed by Lyft.

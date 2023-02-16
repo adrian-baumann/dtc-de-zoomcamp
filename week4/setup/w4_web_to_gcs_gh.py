@@ -95,7 +95,7 @@ def etl_local_to_gcs(path: Path) -> None:
 @flow()
 def etl_parent_flow_gh(months: list[int] = None, years: list[int] = None, colors: list[str] = None):
     file_not_uploaded = []
-    if all([months, year, color]):
+    if all([months, years, colors]):
         for year, month, color in product(years, months, colors):
             path = etl_web_to_local(year, month, color)
             try:

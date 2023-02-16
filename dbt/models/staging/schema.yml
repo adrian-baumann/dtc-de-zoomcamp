@@ -4,22 +4,18 @@ version: 2
 sources:
     - name: staging
       #For bigquery:
-      #database: taxi-rides-ny-339813
-
-      # For postgres:
-      database: production
-
-      schema: trips_data_all
+      database: dtc-de-zoomcamp-376519
+      schema: rides
 
       # loaded_at_field: record_loaded_at
       tables:
-        - name: green_tripdata
-        - name: yellow_tripdata
+        - name: green_rides
+        - name: yellow_rides
          # freshness:
            # error_after: {count: 6, period: hour}
 
 models:
-    - name: stg_green_tripdata
+    - name: stg_green_rides
       description: >
         Trip made by green taxis, also known as boro taxis and street-hail liveries.
         Green taxis may respond to street hails,but only in the areas indicated in green on the
@@ -110,7 +106,7 @@ models:
           - name: Total_amount 
             description: The total amount charged to passengers. Does not include cash tips.
 
-    - name: stg_yellow_tripdata
+    - name: stg_yellow_rides
       description: > 
         Trips made by New York City's iconic yellow taxis. 
         Yellow taxis are the only vehicles permitted to respond to a street hail from a passenger in all five

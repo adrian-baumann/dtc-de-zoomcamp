@@ -5,6 +5,7 @@ from prefect_gcp.cloud_storage import GcsBucket
 from random import randint
 from prefect.tasks import task_input_hash
 from datetime import timedelta
+from itertools import product
 
 
 @task(log_prints=True, retries=3)  # cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=3))
@@ -92,10 +93,10 @@ def etl_local_to_gcs(path: Path) -> None:
 
 
 @flow()
-def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = None):
+def etl_parent_flow_gh(months: list[int] = None, years: list[int] = None, colors: list[str] = None):
     file_not_uploaded = []
     if all([months, year, color]):
-        for month in months:
+        for year, month, color in product(years, months, colors):
             path = etl_web_to_local(year, month, color)
             try:
                 etl_local_to_gcs(path)
@@ -109,7 +110,7 @@ def etl_parent_flow_gh(months: list[int] = None, year: int = None, color: str = 
 
 
 if __name__ == "__main__":
-    color = "yellow"
+    colors = ["yellow"]
     months = [1]
-    year = 2019
-    etl_parent_flow_gh(months, year, color)
+    years = [2019]
+    etl_parent_flow_gh(months, years, colors)

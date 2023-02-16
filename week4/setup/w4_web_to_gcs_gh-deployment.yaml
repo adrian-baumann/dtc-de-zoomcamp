@@ -48,12 +48,16 @@ parameter_openapi_schema:
       items:
         type: integer
     year:
-      title: year
+      title: years
       position: 1
-      type: integer
+      type: array
+      items:
+        type: integer
     color:
-      title: color
+      title: colors
       position: 2
-      type: string
+      type: array
+      items:
+        type: string
   required: null
   definitions: null

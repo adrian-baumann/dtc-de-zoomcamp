@@ -31,6 +31,18 @@ def fetch(dataset_url: str) -> pd.DataFrame:
         "congestion_surcharge": "float32",
     }
 
+    # fhv files
+    if "fhv" in dataset_url:
+        dtype_dict = {
+            "dispatching_base_num": "object",
+            "pickup_datetime": "datetime64[ns]",
+            "dropOff_datetime": "datetime64[ns]",
+            "PUlocationID": "object",
+            "DOlocationID": "object",
+            "SR_Flag": "Int8",
+            "Affiliated_base_number": "object",
+        }
+
     df = pd.read_csv(dataset_url, dtype=dtype_dict)
     return df
 

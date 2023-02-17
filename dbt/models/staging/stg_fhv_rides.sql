@@ -1,12 +1,5 @@
 {{ config(materialized='view') }}
 
-with tripdata as 
-(
-  select *,
-    row_number() over(partition by dispatching_base_num, pickup_datetime) as rn
-  from {{ source('staging','fhv_rides') }}
-  where dispatching_base_num is not null 
-)
 select
     -- identifiers
     {{ dbt_utils.generate_surrogate_key(['dispatching_base_num', 'pickup_datetime']) }} as tripid,
@@ -21,13 +14,12 @@ select
     
     -- trip info
     cast(SR_Flag as integer) as sr_flag
-from tripdata
-where rn = 1
+from {{ source('staging','fhv_rides') }}
 
 
 -- dbt build --m <model.sql> --var 'is_test_run: false'
--- {% if var('is_test_run', default=true) %}
+{% if var('is_test_run', default=false) %}
 
---   limit 100
+  limit 100
 
--- {% endif %}
+{% endif %}

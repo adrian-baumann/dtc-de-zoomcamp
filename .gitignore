@@ -1,5 +1,6 @@
 # IDE and environment
 .vscode/
+.envrc
 */.python-version
 */__pycache__
 

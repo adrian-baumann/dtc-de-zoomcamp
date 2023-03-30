@@ -46,7 +46,7 @@ def download(category: str) -> None:
     links = soup.find_all("a", href=re.compile(".pdf$|.txt$|.zip$"))
     print("found {} files for download into {}".format(len(links), str(path)))
 
-    for link in links:
+    for count, link in enumerate(links):
         href = link["href"]
         file_path = path / href
         mode = "w+b" if "pdf" or "zip" in link["href"] else "w+"
@@ -57,7 +57,7 @@ def download(category: str) -> None:
                     file.write(response.content)
                     sleep(0.1)
 
-        print(f"download of file {href} finished")
+        print(f"download of file {href} finished: ({count}/{len(links)})")
         # TODO: add error handler for timeout with too many requests
 
 @task(
@@ -91,9 +91,9 @@ def unzip(category: str) -> None:
                 fname for fname in zip.namelist() if "Metadaten" in fname
             ]
             for fname in fname_data_lst:
-                zip.extract(fname, target_path)
+                zip.extract(fname, target_data_path)
             for fname in fname_metadata_lst:
-                zip.extract(fname, target_path)
+                zip.extract(fname, target_metadata_path)
 
     files_to_rmv = target_metadata_path.glob("*.html")
     if files_to_rmv:

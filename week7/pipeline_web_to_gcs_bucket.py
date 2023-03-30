@@ -127,7 +127,7 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
             " TNK": "Float32",
             " TGK": "Float32",
         }
-        path = {
+        paths = {
             "recent": Path("./data/recent/download"),
             "historical": Path("./data/historical/download"),
         }

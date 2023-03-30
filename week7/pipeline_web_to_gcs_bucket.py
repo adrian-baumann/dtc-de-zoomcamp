@@ -19,8 +19,13 @@ import gc
 
 
 @task(
+    name="Download-Files",
+    task_run_name="download-{category}-files",
+    description="Downloads compressed files from two endpoints of the DWD Opendata website.",
+    version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
-    retries=3,
+    retry_delay_seconds=60,
+    retries=2,
     cache_key_fn=task_input_hash,
     cache_expiration=timedelta(days=1),
 )
@@ -54,10 +59,12 @@ def download(category: str) -> None:
         print("download finished")
         # TODO: add error handler for timeout with too many requests
 
-
 @task(
+    name="Unzip-Files",
+    task_run_name="unzip-{category}-files",
+    description="Unzips txt files from compressed files and saves them according to data type.",
+    version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
-    retries=1,
 )
 def unzip(category: str) -> None:
     """
@@ -96,8 +103,12 @@ def unzip(category: str) -> None:
 
 
 @task(
+    name="Fetch-Datasets",
+    task_run_name="load-{df_name}-dataframe",
+    description="Loads DataFrames from .txt-files into memory.",
+    version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
-)
+    )
 def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
     """Reads in datasets by creating lists of small dataframes and concatenating them"""
     if df_name == "main":
@@ -204,38 +215,40 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
         df = df.replace(-999, None).astype(dtypes)
 
     if df_name == "metadata_operator":
-        df_new_lst = [
-            pd.read_table(
-                file,
-                sep=";",
-                encoding="latin1",
-                dtype_backend="pyarrow",
-                na_values=None,
-            )
-            for file in Path("./data/recent_data/metadata").glob(
-                "Metadaten_Stationsname_Betreibername*"
-            )
-        ]
+        df_new_lst = []
+        for file in Path("./data/recent_data/metadata").glob(
+            "Metadaten_Stationsname_Betreibername*"
+        ):
+            with open(file, "r", encoding="latin1") as txt_file:
+                text = txt_file.read()
+                table_with_footer = text.split(
+                    "\n\nStations_ID;Betreibername;Von_Datum;Bis_Datum\n "
+                )[1]
+                df_new_lst += [
+                    line.split(";") for line in table_with_footer.splitlines()[:-1]
+                ]
 
-        df_lst = []
-        for df in df_new_lst:
-            split_idx = df.loc[df["Stationsname"] == "Betreibername"].index[0]
-            df.columns = [
+        df = pd.DataFrame(
+            df_new_lst,
+            columns=[
                 "stations_id",
                 "betreibername",
                 "betrieb_von_datum",
                 "betrieb_bis_datum",
-            ]
-            df = df.iloc[split_idx + 1 : -1]
-            df_lst.append(df)
-
-        df = pd.concat(df_lst).reset_index(drop=True)
+            ],
+        )
 
     return df
 
 
-@task(log_prints=True)
-def transform(df: pd.DataFrame, df_name: str()) -> pd.DataFrame:
+@task(
+    name="Transform",
+    task_run_name="transform-{df_name}-dataframe",
+    description="Transforms dates to correct format and other small changes.",
+    version=os.getenv("GIT_COMMIT_SHA"),
+    log_prints=True,
+    )
+def transform(df: pd.DataFrame, df_name: str) -> pd.DataFrame:
     """Fix dtype issues"""
 
     if df_name == "main":
@@ -264,7 +277,13 @@ def transform(df: pd.DataFrame, df_name: str()) -> pd.DataFrame:
     return df
 
 
-@task(log_prints=True)
+@task(
+    name="Write-to-Local",
+    task_run_name="save-{df_name}-dataframe-as-parquet",
+    description="Write DataFrame out locally as parquet file.",
+    version=os.getenv("GIT_COMMIT_SHA"),
+    log_prints=True,
+    )
 def write_local(df: pd.DataFrame, df_name: str) -> Path:
     """Write DataFrame out locally as parquet file"""
     path = Path(f"./data/parquet/{df_name}.parquet")
@@ -272,25 +291,43 @@ def write_local(df: pd.DataFrame, df_name: str) -> Path:
     df.to_parquet(path, compression="gzip")
     return path
 
-
-@task(timeout_seconds=120)
+@task(
+    name="Write-to-GCS",
+    task_run_name="upload-{path}",
+    description="Writes local data to Google Cloud Storage using the GCSBucket Block.",
+    version=os.getenv("GIT_COMMIT_SHA"),
+    log_prints=True,
+    timeout_seconds=120,
+    )
 def write_gcs(path: Path) -> None:
-    """Upload local parquet file to GCS"""
+    """Upload local parquet file using `path` object to GCS"""
     gcs_block = GcsBucket.load("gcs-dtc-bucket")
     gcs_block.upload_from_path(from_path=path, to_path=path)
     return
 
 
-@flow(log_prints=True, retries=3)
-def etl_web_to_local(category: str()) -> Path:
+@flow(
+    name="ETL_Web-to-Local",
+    flow_run_name="download-{category}-files",
+    description="Downloads and unzips files from DWD Opendata website.",
+    version=os.getenv("GIT_COMMIT_SHA"),
+    log_prints=True
+    )
+def etl_web_to_local(category: str) -> Path:
     """The main E function"""
 
     download(category)
     unzip(category)
 
 
-@flow(log_prints=True, retries=3)
-def etl_transform_write(df_name: str()) -> Path:
+@flow(
+    name="ETL_Transform_Write",
+    flow_run_name="transform-{df_name}-dataset",
+    description="Transforms and saves dataset to parquet-file.",
+    version=os.getenv("GIT_COMMIT_SHA"),
+    log_prints=True
+    )
+def etl_transform_write(df_name: str) -> Path:
     """The main T function"""
 
     df = fetch_dataset(df_name)
@@ -300,14 +337,26 @@ def etl_transform_write(df_name: str()) -> Path:
     return path
 
 
-@flow(log_prints=True)
+@flow(
+    name="ETL_Local_to_GCloud_Storage",
+    flow_run_name="upload-to-{path}",
+    description="Writes local data to Google Cloud Storage using the GCSBucket Block.",
+    version=os.getenv("GIT_COMMIT_SHA"),
+    log_prints=True
+    )
 def etl_local_to_gcs(path: Path) -> None:
     """The main L function"""
     write_gcs(path)
 
 
-@flow(log_prints=True)
-def etl_parent_flow(dataset_categories: list(str), df_names: list(str)) -> None:
+@flow(
+    name="ETL_Parent_Flow",
+    flow_run_name="orchestrate-child-flows",
+    description="Creates flows handling the download, unpacking, transforming, saving and uploading.",
+    version=os.getenv("GIT_COMMIT_SHA"),
+    log_prints=True
+    )
+def etl_parent_flow(dataset_categories: list[str] = ["historical", "recent"], df_names: list[str] = ["main", "metadata_geo", "metadata_operator"]) -> None:
     paths = []
     for category in dataset_categories:
         etl_web_to_local(category)
@@ -324,6 +373,6 @@ def etl_parent_flow(dataset_categories: list(str), df_names: list(str)) -> None:
 
 
 if __name__ == "__main__":
-    dataset_categories["historical", "recent"]
+    dataset_categories = ["historical", "recent"]
     df_names = ["main", "metadata_geo", "metadata_operator"]
     etl_parent_flow(dataset_categories, df_names)

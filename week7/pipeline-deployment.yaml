@@ -35,15 +35,15 @@ infrastructure:
 storage:
   repository: https://github.com/adrian-baumann/dtc-de-zoomcamp.git
   reference: null
-  access_token: '**********'
-  include_git_objects: true
+  access_token: null
+  include_git_objects: false
   _block_document_id: 7415d394-a9cd-4f8d-a717-7124d6755d7c
   _block_document_name: gh-dtc-storage
   _is_anonymous: false
   block_type_slug: github
   _block_type_slug: github
 path: week7/
-entrypoint: pipeline_web_to_gcs_bucket.py:etl_parent_flow
+entrypoint: week7/pipeline_web_to_gcs_bucket.py:etl_parent_flow
 parameter_openapi_schema:
   title: Parameters
   type: object
@@ -69,4 +69,4 @@ parameter_openapi_schema:
         type: string
   required: null
   definitions: null
-timestamp: '2023-03-30T08:55:01.843610+00:00'
+timestamp: '2023-03-30T09:01:58.504978+00:00'

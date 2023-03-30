@@ -47,16 +47,17 @@ def download(category: str) -> None:
     print("found {} files for download into {}".format(len(links), str(path)))
 
     for link in links:
-        file_path = path / link["href"]
+        href = link["href"]
+        file_path = path / href
         mode = "w+b" if "pdf" or "zip" in link["href"] else "w+"
         file_url = dataset_url + link["href"]
         if not file_path.is_file():
             with requests.get(file_url) as response:
                 with open(str(file_path), mode) as file:
                     file.write(response.content)
-                    sleep(0.5)
+                    sleep(0.1)
 
-        print("download finished")
+        print(f"download of file {href} finished")
         # TODO: add error handler for timeout with too many requests
 
 @task(

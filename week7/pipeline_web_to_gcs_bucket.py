@@ -66,6 +66,8 @@ def download(category: str) -> None:
     description="Unzips txt files from compressed files and saves them according to data type.",
     version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
+    cache_key_fn=task_input_hash,
+    cache_expiration=timedelta(days=1),
 )
 def unzip(category: str) -> None:
     """
@@ -105,13 +107,16 @@ def unzip(category: str) -> None:
 
 @task(
     name="Fetch-Datasets",
-    task_run_name="load-{df_name}-dataframe",
+    task_run_name="load-{df_name}-dataset",
     description="Loads DataFrames from .txt-files into memory.",
     version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
+    cache_key_fn=task_input_hash,
+    cache_expiration=timedelta(days=1),
     )
 def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
     """Reads in datasets by creating lists of small dataframes and concatenating them"""
+    print(f"loading {df_name} dataset into a pandas dataframe")
     if df_name == "main":
         dtypes = {
             "STATIONS_ID": "string",
@@ -128,8 +133,8 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
             " TGK": "Float32",
         }
         paths = {
-            "recent": Path("./data/recent/download"),
-            "historical": Path("./data/historical/download"),
+            "recent": Path("./data/recent/tables"),
+            "historical": Path("./data/historical/tables"),
         }
         usecols = [
             "STATIONS_ID",
@@ -248,6 +253,8 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
     description="Transforms dates to correct format and other small changes.",
     version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
+    cache_key_fn=task_input_hash,
+    cache_expiration=timedelta(days=1),
     )
 def transform(df: pd.DataFrame, df_name: str) -> pd.DataFrame:
     """Fix dtype issues"""
@@ -284,6 +291,8 @@ def transform(df: pd.DataFrame, df_name: str) -> pd.DataFrame:
     description="Write DataFrame out locally as parquet file.",
     version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
+    cache_key_fn=task_input_hash,
+    cache_expiration=timedelta(days=1),
     )
 def write_local(df: pd.DataFrame, df_name: str) -> Path:
     """Write DataFrame out locally as parquet file"""
@@ -298,12 +307,12 @@ def write_local(df: pd.DataFrame, df_name: str) -> Path:
     description="Writes local data to Google Cloud Storage using the GCSBucket Block.",
     version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
-    timeout_seconds=120,
+    timeout_seconds=600,
     )
 def write_gcs(path: Path) -> None:
     """Upload local parquet file using `path` object to GCS"""
     gcs_block = GcsBucket.load("gcs-dtc-bucket")
-    gcs_block.upload_from_path(from_path=path, to_path=path)
+    gcs_block.upload_from_path(from_path=path, to_path=path, timeout=600)
     return
 
 
@@ -374,8 +383,8 @@ def etl_parent_flow(
         except OSError:
             print(f"Connection Timeout. Try uploading manually.\nFile: {path.name}")
 
-    else:
-        print("parameter is missing")
+        else:
+            print("parameter is missing")
 
 
 if __name__ == "__main__":

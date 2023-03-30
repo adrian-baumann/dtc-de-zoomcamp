@@ -24,8 +24,8 @@ import gc
     description="Downloads compressed files from two endpoints of the DWD Opendata website.",
     version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True,
-    retry_delay_seconds=60,
-    retries=2,
+    retry_delay_seconds=20,
+    retries=5,
     cache_key_fn=task_input_hash,
     cache_expiration=timedelta(days=1),
 )
@@ -55,7 +55,7 @@ def download(category: str) -> None:
             with requests.get(file_url) as response:
                 with open(str(file_path), mode) as file:
                     file.write(response.content)
-                    sleep(0.1)
+                    sleep(0.2)
 
         print(f"download of file {href} finished: ({count}/{len(links)})")
         # TODO: add error handler for timeout with too many requests
@@ -128,8 +128,8 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
             " TGK": "Float32",
         }
         path = {
-            "recent_data": Path("./data/recent_data/download"),
-            "historical_data": Path("./data/historical_data/download"),
+            "recent": Path("./data/recent/download"),
+            "historical": Path("./data/historical/download"),
         }
         usecols = [
             "STATIONS_ID",
@@ -156,7 +156,7 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
                 dtype=dtypes,
                 na_values=None,
             )
-            for file in paths["recent_data"].glob("*.txt")
+            for file in paths["recent"].glob("*.txt")
         ]
 
         df_hist_lst = [
@@ -168,7 +168,7 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
                 dtype=dtypes,
                 na_values=None,
             )
-            for file in paths["historical_data"].glob("*.txt")
+            for file in paths["historical"].glob("*.txt")
         ]
         df = pd.concat(df_new_lst + df_hist_lst).reset_index(drop=True)
         df = df.replace(-999, None).astype(dtypes)
@@ -193,7 +193,7 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
                 dtype_backend="pyarrow",
                 na_values=None,
             )
-            for file in Path("./data/recent_data/metadata").glob(
+            for file in Path("./data/recent/metadata").glob(
                 "Metadaten_Geographie*"
             )
         ]
@@ -207,7 +207,7 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
                 dtype_backend="pyarrow",
                 na_values=None,
             )
-            for file in Path("./data/historical_data/metadata").glob(
+            for file in Path("./data/historical/metadata").glob(
                 "Metadaten_Geographie*"
             )
         ]
@@ -217,7 +217,7 @@ def fetch_dataset(df_name: str) -> (pd.DataFrame, str()):
 
     if df_name == "metadata_operator":
         df_new_lst = []
-        for file in Path("./data/recent_data/metadata").glob(
+        for file in Path("./data/recent/metadata").glob(
             "Metadaten_Stationsname_Betreibername*"
         ):
             with open(file, "r", encoding="latin1") as txt_file:
@@ -357,10 +357,15 @@ def etl_local_to_gcs(path: Path) -> None:
     version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True
     )
-def etl_parent_flow(dataset_categories: list[str] = ["historical", "recent"], df_names: list[str] = ["main", "metadata_geo", "metadata_operator"]) -> None:
+def etl_parent_flow(
+    dataset_categories: list[str] = ["historical", "recent"], 
+    df_names: list[str] = ["main", "metadata_geo", "metadata_operator"], 
+    download_data: bool = False
+    ) -> None:
     paths = []
-    for category in dataset_categories:
-        etl_web_to_local(category)
+    if download_data:
+        for category in dataset_categories:
+            etl_web_to_local(category)
     for df_name in df_names:
         paths.append(etl_transform_write(df_name))
     for path in paths:
@@ -376,4 +381,5 @@ def etl_parent_flow(dataset_categories: list[str] = ["historical", "recent"], df
 if __name__ == "__main__":
     dataset_categories = ["historical", "recent"]
     df_names = ["main", "metadata_geo", "metadata_operator"]
+    download_data = False
     etl_parent_flow(dataset_categories, df_names)

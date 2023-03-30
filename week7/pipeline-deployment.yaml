@@ -4,7 +4,7 @@
 name: Github Storage Flow
 description: Creates flows handling the download, unpacking, transforming, saving
   and uploading.
-version: 1c9f6366b28582336681ffb5a850e81e
+version: f7537a8d6a27894e2e61937d3c55af0e
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: default-agent-pool
@@ -67,6 +67,11 @@ parameter_openapi_schema:
       type: array
       items:
         type: string
+    download_data:
+      title: download_data
+      default: false
+      position: 2
+      type: boolean
   required: null
   definitions: null
-timestamp: '2023-03-30T09:01:58.504978+00:00'
+timestamp: '2023-03-30T09:52:10.223974+00:00'

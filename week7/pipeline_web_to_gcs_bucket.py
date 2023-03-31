@@ -17,6 +17,26 @@ from zipfile import ZipFile
 
 import gc
 
+@task(
+    name="Get-File_links",
+    task_run_name="Get-{category}-files",
+    description="Returns links to files from endpoint of the DWD Opendata website.",
+    version=os.getenv("GIT_COMMIT_SHA"),
+    log_prints=True,
+    retries=1,
+    cache_key_fn=task_input_hash,
+    cache_expiration=timedelta(days=1),
+)
+def get_file_links(url: str, category: str) -> list:
+        """Get urls of files"""
+        tmp_url = url + category 
+        page = requests.get(tmp_url)
+        soup = BeautifulSoup(page.content, "html.parser")
+        links = soup.find_all("a", href=re.compile(".pdf$|.txt$|.zip$"))
+        print("found {} files for download".format(len(links)))
+        
+        return [[link, category] for link in links]
+
 
 @task(
     name="Download-Files",
@@ -29,36 +49,30 @@ import gc
     cache_key_fn=task_input_hash,
     cache_expiration=timedelta(days=1),
 )
-def download(category: str) -> None:
+def download_files(link_and_category: list) -> None:
     """
     Download daily mean of the observed air temperatures at 2m height above ground from DWD (German Meteorological Service).
     Loading can take some time as it is intentionally slowed down to decrease load on opendata server.
     """
 
-    dataset_url = f"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/kl/{category}/"
+    link, category = link_and_category 
 
-    page = requests.get(dataset_url)
-    soup = BeautifulSoup(page.content, "html.parser")
+    save_path = Path(f"./data/{category}/download")
+    save_path.mkdir(parents=True, exist_ok=True) 
+    
+    file_path = save_path / link["href"]
+    mode = "w+b" if "pdf" or "zip" in link["href"] else "w+"
+    file_url = url + link["href"]
+    if not file_path.is_file():
+        with requests.get(file_url) as response:
+            with open(str(file_path), mode) as file:
+                file.write(response.content)
+                sleep(0.5)
+    # TODO: add error handler for timeout with too many requests
 
-    path = Path("./data") / category / "download"
-    path.mkdir(parents=True, exist_ok=True)
 
-    links = soup.find_all("a", href=re.compile(".pdf$|.txt$|.zip$"))
-    print("found {} files for download into {}".format(len(links), str(path)))
 
-    for count, link in enumerate(links):
-        href = link["href"]
-        file_path = path / href
-        mode = "w+b" if "pdf" or "zip" in link["href"] else "w+"
-        file_url = dataset_url + link["href"]
-        if not file_path.is_file():
-            with requests.get(file_url) as response:
-                with open(str(file_path), mode) as file:
-                    file.write(response.content)
-                    sleep(0.2)
 
-        print(f"download of file {href} finished: ({count}/{len(links)})")
-        # TODO: add error handler for timeout with too many requests
 
 @task(
     name="Unzip-Files",
@@ -313,8 +327,7 @@ def write_gcs(path: Path) -> None:
     """Upload local parquet file using `path` object to GCS"""
     gcs_block = GcsBucket.load("gcs-dtc-bucket")
     gcs_block.upload_from_path(from_path=path, to_path=path, timeout=600)
-    return
-
+    return  
 
 @flow(
     name="ETL_Web-to-Local",
@@ -323,10 +336,16 @@ def write_gcs(path: Path) -> None:
     version=os.getenv("GIT_COMMIT_SHA"),
     log_prints=True
     )
-def etl_web_to_local(category: str) -> Path:
+def etl_web_to_local(category: str, poolsize: int = 5, chunksize: int = 2) -> Path:
     """The main E function"""
+    url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/kl/"
+    links_and_category = get_file_links(url, category)
+    num_links = len(links)
 
-    download(category)
+    # Downloading starts here
+    with ThreadPool(poolsize) as pool:
+        for count, result in enumerate(pool.imap_unordered(download_files, links_and_category, chunksize=chunksize)):
+            print(f"downloads finished: {count}/{num_links}")
     unzip(category)
 
 
